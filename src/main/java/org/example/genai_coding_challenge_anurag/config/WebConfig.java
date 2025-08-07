@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
-
+    //Connections from frontend to backend
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")

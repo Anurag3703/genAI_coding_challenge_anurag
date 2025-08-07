@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 @Controller
 public class FrontendController {
 
+
+    //Frontend Endpoint
     @GetMapping(value = "/")
     public ResponseEntity<String> home()  throws IOException {
         try{

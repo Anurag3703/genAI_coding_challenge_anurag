@@ -12,6 +12,8 @@ import java.util.List;
 @Service
 public class ValidationServiceImpl implements ValidatorService {
 
+
+    //Work Experience Validation
     private boolean isExperienceValid(String experience) {
         if(experience == null || experience.isEmpty()) {
             return false;
@@ -24,6 +26,7 @@ public class ValidationServiceImpl implements ValidatorService {
         }
     }
 
+    // As mentioned in the question Skills(Java,LLM)
     private boolean hasRequiredSkills(List<String> skills) {
         if(skills == null || skills.isEmpty()) {
             return false;
@@ -37,6 +40,7 @@ public class ValidationServiceImpl implements ValidatorService {
 
     }
 
+    //Language Requirements check
     private boolean hasRequiredLanguages(List<String> languages) {
         if(languages == null || languages.isEmpty()) {
             return false;
@@ -49,6 +53,8 @@ public class ValidationServiceImpl implements ValidatorService {
                 .containsAll(List.of("english", "hungarian"));
     }
 
+    //Profile check (Kept it strictly generic)
+    //Another Way of Testing is using llm .
     private boolean isProfileValid(String profile) {
         if (profile == null) {
             return false;

@@ -16,6 +16,7 @@ import java.io.InputStream;
 public class PDFExtractionServiceImpl implements PdfExtractionService {
     private static final Logger log = LoggerFactory.getLogger(PDFExtractionServiceImpl.class);
 
+    //Used Apache PDF box for extraction of text from pdf
     @Override
     public String extractTextFromPDF(InputStream stream) throws IOException {
         try(PDDocument document = Loader.loadPDF(stream.readAllBytes())){
@@ -27,6 +28,8 @@ public class PDFExtractionServiceImpl implements PdfExtractionService {
         }
     }
 
+
+    //Can test local file in /samples folder (Instruction - Copy the absolute path)
     @Override
     public String extractTextFromFilePath(String filePath) throws Exception {
         if(filePath == null || filePath.isEmpty()){

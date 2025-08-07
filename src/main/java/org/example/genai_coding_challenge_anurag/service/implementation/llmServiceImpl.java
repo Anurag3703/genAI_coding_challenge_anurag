@@ -23,6 +23,8 @@ public class llmServiceImpl implements llmService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
+    //Why used GROQ - I am utilizing the GROQ api for my portfolio project "Alfred AI" my personal buttler a RAG based AI agent that know everything about my life .
+
     @Value("${groq.api.key}")
     private String groqApiKey ;
     @Value("${groq.model}")
@@ -52,6 +54,7 @@ public class llmServiceImpl implements llmService {
             String prompt = buildPrompt(resumeText);
             log.info("Prompt Created and ready to be sent");
 
+            // Used GROK API Documentation
             Map<String ,Object> requestBody = Map.of(
                     "model",groqModel,
                     "messages", List.of(
@@ -59,19 +62,23 @@ public class llmServiceImpl implements llmService {
                             Map.of("role","user","content",prompt)
 
                     ),
-                    "temperature",0.2
+                    "temperature",0.2 // As we are dealing professionally I kept the temperature less
             );
 
             log.info("Request body created and sending request to groq model : {}",groqModel);
 
+
+            //Usually Before Used RestTemplate But they are Quite slow and old-fashioned , Learned web-client
+            // Json node is part of Jackson's com.fasterxml.jackson.databind package.
+            // It helps me to represent Json structure irrespective of the type.
             JsonNode response = webClient.post()
                     .uri(groqUrl)
                     .header("Authorization","Bearer " + groqApiKey)
                     .header("Content-Type","application/json")
                     .bodyValue(requestBody)
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
-                    .block();
+                    .bodyToMono(JsonNode.class)  // Two things (FLUX and MONO) mono if one json object , FLUX when there is a list
+                    .block(); //Made it syn as we are parsing one doc at a time
 
             if(response == null){
                 log.error("response is null");
@@ -84,6 +91,8 @@ public class llmServiceImpl implements llmService {
                 return getFallbackExtractionFields();
             }
 
+
+            //GROK Documentation
             JsonNode choices = response.get("choices");
             if (choices == null || choices.isEmpty()) {
                 log.error("choices is null");
@@ -97,6 +106,7 @@ public class llmServiceImpl implements llmService {
 
             log.info("LLM response content: {}", content);
 
+            // Parse the raw JSON string 'content' into a JsonNode object for structured
             JsonNode node = objectMapper.readTree(content);
             log.info("LLM response node: {}", node);
 
@@ -121,6 +131,8 @@ public class llmServiceImpl implements llmService {
 
     }
 
+
+    // Fall back for unwanted errors
     @Override
     public ExtractionFields getFallbackExtractionFields() {
         ExtractionFields fallback = new ExtractionFields();
@@ -131,66 +143,76 @@ public class llmServiceImpl implements llmService {
         return fallback;
     }
 
+
+    // Prompt – After reading the question, I tried to resolve the issue and explain as much as I could.
+    // One challenge I encountered was with 'workExperience' as it was being detected inconsistently.
     public String buildPrompt(String resumeText) {
         return """
-    You are a professional resume parser. Extract the following fields from the CV text and return ONLY a valid JSON object.
-    DO NOT include any explanation, introductory text, or markdown formatting.
-    
-    CRITICAL INSTRUCTIONS:
-    
-    1. WORK_EXPERIENCE:
-       - Calculate total years of professional work experience from employment dates
-       - For date ranges like "2020-2022", calculate the difference (e.g., 2 years)
-       - For ongoing positions "2023-Present" or "2023-Current", calculate up to 2025
-       - Include internships, part-time work, and contract work
-       - If no dates available, look for explicit statements like "2 years experience"
-       - Sum all work experiences together
-       - Return ONLY the total number as a string (e.g., "0", "1", "2", "5")
-       - If no experience found, return "0"
-    
-    2. SKILLS:
-       - Extract ALL technical skills, programming languages, frameworks, tools
-       - Include soft skills if explicitly mentioned
-       - Look for sections like "Skills", "Technical Skills", "Competencies"
-       - Normalize skill names (e.g., "JavaScript" not "js", "Java" not "JAVA")
-       - Return as array of strings: ["skill1", "skill2", ...]
-       - If no skills found, return empty array: []
-    
-    3. LANGUAGES:
-       - Extract ALL spoken/written languages mentioned
-       - Include proficiency levels if mentioned (e.g., "English (Fluent)", "Spanish (Basic)")
-       - Look in dedicated language sections or within text
-       - Return as array of strings: ["language1", "language2", ...]
-       - If no languages found, return empty array: []
-    
-    4. PROFILE:
-       - Extract or create a comprehensive professional summary
-       - Include career objectives, interests, and aspirations
-       - Look for sections like "Summary", "Objective", "About", "Profile"
-       - If no dedicated section exists, synthesize from the overall resume content
-       - Focus on professional goals, interests in technologies, career direction
-       - Should be 2-4 sentences capturing the person's professional identity
-       - If insufficient information, return brief summary based on available data
-    
-    RESPONSE FORMAT:
-    Return EXACTLY this JSON structure with no additional text:
-    
-    {
-      "work_experience": "number_only",
-      "skills": ["skill1", "skill2"],
-      "languages": ["language1", "language2"],
-      "profile": "professional summary text"
+You are a professional resume parser. Extract the following fields from the CV text and return ONLY a valid JSON object.
+DO NOT include any explanation, introductory text, or markdown formatting.
+
+CRITICAL INSTRUCTIONS:
+
+1. WORK_EXPERIENCE:
+   - Calculate total years of PROFESSIONAL WORK EXPERIENCE ONLY from employment history
+   - IGNORE education dates, academic periods, and degree durations
+   - Only count positions in "Work Experience", "Employment", "Professional Experience" sections
+   - For date ranges like "2023-2024", calculate the difference (e.g., 1 year)
+   - For ongoing positions "2024-Present" or "2024-Current", calculate from start year to 2025
+   - For positions less than 1 year, round to nearest year (6+ months = 1 year, <6 months = 0 years)
+   - Include internships, part-time work, and contract work ONLY if in work experience sections
+   - Sum all work experiences together
+   - DO NOT count education, university, college, or academic periods
+   - If the CV explicitly states experience duration (e.g., "one year of experience"), use that number
+   - Return ONLY the total number as a string (e.g., "0", "1", "2", "5")
+   - If no work experience found, return "0"
+
+2. SKILLS:
+   - Extract ALL technical skills, programming languages, frameworks, tools
+   - Include soft skills if explicitly mentioned
+   - Look for sections like "Skills", "Technical Skills", "Competencies"
+   - Normalize skill names (e.g., "JavaScript" not "js", "Java" not "JAVA")
+   - Return as array of strings: ["skill1", "skill2", ...]
+   - If no skills found, return empty array: []
+
+3. LANGUAGES:
+   - Extract ALL spoken/written languages mentioned
+   - Include proficiency levels if mentioned (e.g., "English (Fluent)", "Spanish (Basic)")
+   - Look in dedicated language sections or within text
+   - Return as array of strings: ["language1", "language2", ...]
+   - If no languages found, return empty array: []
+
+4. PROFILE:
+   - Extract or create a comprehensive professional summary
+   - Include career objectives, interests, and aspirations
+   - Look for sections like "Summary", "Objective", "About", "Profile"
+   - If no dedicated section exists, synthesize from the overall resume content
+   - Focus on professional goals, interests in technologies, career direction
+   - Should be 2-4 sentences capturing the person's professional identity
+   - If insufficient information, return brief summary based on available data
+
+RESPONSE FORMAT:
+Return EXACTLY this JSON structure with no additional text:
+
+{
+  "work_experience": "number_only",
+  "skills": ["skill1", "skill2"],
+  "languages": ["language1", "language2"],
+  "profile": "professional summary text"
+}
+
+EXAMPLES:
+- Employment: "Marketing Manager at Kyembura Studio (2024-2025)" → work_experience: "1"
+- Education: "University (2021-2024)" → DO NOT COUNT THIS
+- Skills mentioned: "Project Management, Teamwork, LLM" → skills: ["Project Management", "Teamwork", "LLM"]
+- Languages: "English (Fluent), French (Fluent), Hungarian (Basics)" → languages: ["English (Fluent)", "French (Fluent)", "Hungarian (Basics)"]
+
+CV Text:
+%s
+""".formatted(resumeText);
     }
-    
-    EXAMPLES:
-    - Employment: "Software Engineer at ABC Corp (2022-2024)" → work_experience: "2"
-    - Skills mentioned: "Java, Python, Spring Boot" → skills: ["Java", "Python", "Spring Boot"]
-    - Languages: "Fluent in English and Hungarian" → languages: ["English", "Hungarian"]
-    
-    CV Text:
-    %s
-    """.formatted(resumeText);
-    }
+
+    //Helper method for extracting required fields from JSON Node
     private ExtractionFields mapToExtractionFields(JsonNode node) {
         ExtractionFields extractionFields = new ExtractionFields();
 
