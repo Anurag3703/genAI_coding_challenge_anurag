@@ -176,8 +176,9 @@ CRITICAL INSTRUCTIONS:
    - If no skills found, return empty array: []
 
 3. LANGUAGES:
-   - Extract ALL spoken/written languages mentioned
-   - Include proficiency levels if mentioned (e.g., "English (Fluent)", "Spanish (Basic)")
+   - Extract ONLY the language names without proficiency levels
+   - Remove any proficiency indicators like (Fluent), (Basic), (Native), (Intermediate), etc.
+   - Return only the clean language names
    - Look in dedicated language sections or within text
    - Return as array of strings: ["language1", "language2", ...]
    - If no languages found, return empty array: []
@@ -205,7 +206,7 @@ EXAMPLES:
 - Employment: "Marketing Manager at Kyembura Studio (2024-2025)" → work_experience: "1"
 - Education: "University (2021-2024)" → DO NOT COUNT THIS
 - Skills mentioned: "Project Management, Teamwork, LLM" → skills: ["Project Management", "Teamwork", "LLM"]
-- Languages: "English (Fluent), French (Fluent), Hungarian (Basics)" → languages: ["English (Fluent)", "French (Fluent)", "Hungarian (Basics)"]
+- Languages: "English (Fluent), French (Fluent), Hungarian (Basics)" → languages: ["English", "French", "Hungarian"]
 
 CV Text:
 %s
