@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Parser</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 35px;
+            font-size: 16px;
+        }
+
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 6px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            background-color: #fafafa;
+            transition: border-color 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #3498db;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-label {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .upload-label:hover {
+            background-color: #2980b9;
+        }
+
+        .selected-file {
+            margin-top: 15px;
+            padding: 8px 12px;
+            background-color: #e8f4f8;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .process-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .process-btn:hover:not(:disabled) {
+            background-color: #219a52;
+        }
+
+        .process-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .processing {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .loader {
+            border: 3px solid #ecf0f1;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .results-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .field-group {
+            margin-bottom: 25px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .field-header {
+            background-color: #f8f9fa;
+            padding: 12px 16px;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-valid {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .field-content {
+            padding: 16px;
+            background-color: white;
+        }
+
+        .experience-value {
+            font-size: 18px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .skills-container, .languages-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag, .language-tag {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            border: 1px solid #ced4da;
+        }
+
+        .profile-content {
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .reset-button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .reset-button:hover {
+            background-color: #545b62;
+        }
+
+
+        @media (max-width: 600px) {
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+
+        .skill-tag, .language-tag {
+            word-break: break-word;
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <h1>Resume Parser</h1>
+    <p class="subtitle">Extract key information from PDF resumes</p>
+
+    <div class="upload-area">
+        <input type="file" id="resumeFile" class="file-input" accept=".pdf">
+        <label for="resumeFile" class="upload-label">Choose PDF File</label>
+        <div id="fileInfo" class="selected-file"></div>
+        <button id="extractBtn" class="process-btn">Process Resume</button>
+    </div>
+
+    <div id="loadingState" class="processing">
+        <div class="loader"></div>
+        <p>Analyzing resume content...</p>
+    </div>
+
+    <div id="errorDisplay" class="error-message"></div>
+
+    <div id="extractedData" class="results-container">
+        <div class="field-group">
+            <div class="field-header">
+                <span>Work Experience</span>
+                <span id="expStatus" class="status-indicator"></span>
+            </div>
+            <div class="field-content">
+                <div class="experience-value">
+                    <span id="yearsExp"></span> years of experience
+                </div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <div class="field-header">
+                <span>Technical Skills</span>
+                <span id="skillsStatus" class="status-indicator"></span>
+            </div>
+            <div class="field-content">
+                <div id="skillsDisplay" class="skills-container"></div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <div class="field-header">
+                <span>Languages</span>
+                <span id="langStatus" class="status-indicator"></span>
+            </div>
+            <div class="field-content">
+                <div id="languagesDisplay" class="languages-container"></div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <div class="field-header">
+                <span>Professional Summary</span>
+                <span id="summaryStatus" class="status-indicator"></span>
+            </div>
+            <div class="field-content">
+                <div id="profileDisplay" class="profile-content"></div>
+            </div>
+        </div>
+
+        <button id="startOver" class="reset-button">Process Another Resume</button>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('resumeFile');
+    const fileDisplay = document.getElementById('fileInfo');
+    const extractButton = document.getElementById('extractBtn');
+    const loadingDiv = document.getElementById('loadingState');
+    const resultsDiv = document.getElementById('extractedData');
+    const errorDiv = document.getElementById('errorDisplay');
+    const resetButton = document.getElementById('startOver');
+
+    // Handle file selection
+    fileInput.addEventListener('change', function(e) {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            fileDisplay.textContent = `Selected: ${selectedFile.name}`;
+            fileDisplay.style.display = 'block';
+            extractButton.style.display = 'inline-block';
+        } else {
+            fileDisplay.style.display = 'none';
+            extractButton.style.display = 'none';
+        }
+    });
+
+    // Handle extraction process
+    extractButton.addEventListener('click', function() {
+        const file = fileInput.files[0];
+        if (!file) {
+            displayError('No file selected. Please choose a PDF file.');
+            return;
+        }
+
+        // Basic validation
+        if (file.type !== 'application/pdf') {
+            displayError('Invalid file type. Please select a PDF file.');
+            return;
+        }
+
+        // (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            displayError('File too large. Please select a file under 5MB.');
+            return;
+        }
+
+        processResume(file);
+    });
+
+    resetButton.addEventListener('click', function() {
+        clearForm();
+    });
+
+    function processResume(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showProcessing(true);
+        hideError();
+        hideResults();
+
+        // API call
+        fetch('http://localhost:8091/api/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(errorText => {
+                        throw new Error(errorText || `Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                showProcessing(false);
+                renderResults(data);
+            })
+            .catch(error => {
+                showProcessing(false);
+                displayError(`Processing failed: ${error.message}`);
+                console.error('Extraction error:', error);
+            });
+    }
+
+    function renderResults(data) {
+        const fields = data.extractionFields;
+        const validation = data.validationResult;
+
+        // Experience
+        document.getElementById('yearsExp').textContent = fields.workExperience || '0';
+        updateStatus('expStatus', validation.experienceValid);
+
+        // Skills
+        const skillsContainer = document.getElementById('skillsDisplay');
+        skillsContainer.innerHTML = '';
+        if (fields.skills && fields.skills.length > 0) {
+            fields.skills.forEach(skill => {
+                const tag = document.createElement('span');
+                tag.className = 'skill-tag';
+                tag.textContent = skill;
+                skillsContainer.appendChild(tag);
+            });
+        } else {
+            skillsContainer.innerHTML = '<em>No skills found</em>';
+        }
+        updateStatus('skillsStatus', validation.skillsValid);
+
+        // Languages
+        const langContainer = document.getElementById('languagesDisplay');
+        langContainer.innerHTML = '';
+        if (fields.languages && fields.languages.length > 0) {
+            fields.languages.forEach(lang => {
+                const tag = document.createElement('span');
+                tag.className = 'language-tag';
+                tag.textContent = lang;
+                langContainer.appendChild(tag);
+            });
+        } else {
+            langContainer.innerHTML = '<em>No languages specified</em>';
+        }
+        updateStatus('langStatus', validation.languagesValid);
+
+        // Profile
+        const profileDiv = document.getElementById('profileDisplay');
+        profileDiv.textContent = fields.profile || 'No summary found';
+        updateStatus('summaryStatus', validation.profileValid);
+
+        resultsDiv.style.display = 'block';
+    }
+
+    function updateStatus(elementId, isValid) {
+        const statusEl = document.getElementById(elementId);
+        if (isValid) {
+            statusEl.className = 'status-indicator status-valid';
+            statusEl.textContent = 'Valid';
+        } else {
+            statusEl.className = 'status-indicator status-invalid';
+            statusEl.textContent = 'Needs Review';
+        }
+    }
+
+    function showProcessing(show) {
+        loadingDiv.style.display = show ? 'block' : 'none';
+        extractButton.disabled = show;
+    }
+
+    function displayError(message) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    function hideError() {
+        errorDiv.style.display = 'none';
+    }
+
+    function hideResults() {
+        resultsDiv.style.display = 'none';
+    }
+
+    function clearForm() {
+        fileInput.value = '';
+        fileDisplay.style.display = 'none';
+        extractButton.style.display = 'none';
+        hideError();
+        hideResults();
+        showProcessing(false);
+    }
+</script>
+</body>
+</html>
