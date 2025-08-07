@@ -309,7 +309,7 @@
     const errorDiv = document.getElementById('errorDisplay');
     const resetButton = document.getElementById('startOver');
 
-    // Handle file selection
+    // file selection
     fileInput.addEventListener('change', function(e) {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
@@ -322,7 +322,7 @@
         }
     });
 
-    // Handle extraction process
+    // extraction process
     extractButton.addEventListener('click', function() {
         const file = fileInput.files[0];
         if (!file) {
