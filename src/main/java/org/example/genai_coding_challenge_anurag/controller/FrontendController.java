@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 @Controller
 public class FrontendController {
 
-    @GetMapping(value = "/home")
+    @GetMapping(value = "/")
     public ResponseEntity<String> home()  throws IOException {
         try{
             ClassPathResource classPathResource = new ClassPathResource("static/index.html");
